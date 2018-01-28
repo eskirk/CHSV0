@@ -170,6 +170,30 @@ router.post('/', function(req, res) {
    });
 });
 
+// router.put('/:id', function(req, res) {
+//    var vld = req.validator;
+//    var body = req.body;
+//    var admin = req.session && req.session.isAdmin();
+//    var ccn = req.cnn;
+
+//    async.waterfall({
+//    function(cb) { // Check to see if the user is attempting to modify improper properties
+//       if (vld.hasFields(body, ["termsAccepted", "whenRegistered"], cb)) {
+//          vld.chain(!body.termsAccepted || body.termsAccepted, Tags.forbiddenField)
+//          .chain(!body.whenRegistered || body.whenRegistered, Tags.forbiddenField)
+//          .check(body.termsAccepted || body.whenRegistered, Tags.forbiddenField, ["fields"], cb);
+//       }
+//    },
+//    function(cb) {
+
+//    }
+//    })
+
+//    if (vld.checkPrsOK(req.params.id)) {
+      
+//    }
+// });
+
 
 router.get('/:id', function(req, res) {
    var vld = req.validator;

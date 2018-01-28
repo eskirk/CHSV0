@@ -17,6 +17,7 @@ Validator.Tags = {
    dupEmail: "dupEmail",            // Email duplicates an existing email
    noTerms: "noTerms",              // Acceptance of terms is required.
    forbiddenRole: "forbiddenRole",  // Cannot set to this role
+   forbiddenField: "forbiddenField",// Cannot change this field 
    noOldPwd: "noOldPwd",            // Change of password requires an old password
    dupTitle: "dupTitle",            // Title duplicates an existing Conversation title
    dupEnrollment: "dupEnrollment",  // Duplicate enrollment
