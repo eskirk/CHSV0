@@ -31,7 +31,6 @@ router.post('/', function(req, res) {
          }
       },
       function(existingPrss, fields, cb) {
-         console.log(existingPrss);
          if (vld.check(existingPrss.length && existingPrss[0].password === body.password, 
          Tags.badLogin, null, cb)) {
             cookie = ssnUtil.makeSession(existingPrss[0], res);
