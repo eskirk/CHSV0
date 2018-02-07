@@ -1,6 +1,7 @@
 var Express = require('express');
 var Tags = require('../Validator.js').Tags;
 var ssnUtil = require('../Session.js');
+var async = require('async');
 var router = Express.Router({caseSensitive: true});
 
 router.baseURL = '/Ssns';
@@ -20,16 +21,26 @@ router.get('/', function(req, res) {
 router.post('/', function(req, res) {
    var cookie;
    var cnn = req.cnn;
+   var body = req.body;
+   var vld = req.validator;
 
-   cnn.query('select * from Person where email = ?', [req.body.email],
-   function(err, result) {
-      if (req.validator.check(result.length && result[0].password ===
-       req.body.password, Tags.badLogin)) {
-         cookie = ssnUtil.makeSession(result[0], res);
-         res.location(router.baseURL + '/' + cookie).status(200).end();
-      }
-      req.cnn.release();
-   });
+   async.waterfall([
+      function(cb) {
+         if (vld.hasFields(body, ["email", "password"], cb)) {
+            cnn.chkQry('select * from Person where email = ?', [body.email], cb);
+         }
+      },
+      function(existingPrss, fields, cb) {
+         console.log(existingPrss);
+         if (vld.check(existingPrss.length && existingPrss[0].password === body.password, 
+         Tags.badLogin, null, cb)) {
+            cookie = ssnUtil.makeSession(existingPrss[0], res);
+            res.location(router.baseURL + '/' + cookie).status(200).end()
+         }
+      }],
+      function(err) {
+         cnn.release();
+      });
 });
 
 router.delete('/:cookie', function(req, res) {

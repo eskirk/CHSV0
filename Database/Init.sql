@@ -1,6 +1,4 @@
-drop database if exists eskirk;
-create database eskirk;
-use eskirk;
+use webdev;
 
 create table Person (
    id int auto_increment primary key,

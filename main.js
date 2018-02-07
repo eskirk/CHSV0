@@ -127,7 +127,7 @@ app.use(function(req, res) {
 });
 
 app.use(function(err, req, res, next) {
-   res.status(400).json(err);
+   res.status(500).json(err);
    req.cnn && req.cnn.release();
 });
 
