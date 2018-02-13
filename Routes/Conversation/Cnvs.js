@@ -6,23 +6,47 @@ var async = require('async');
 router.baseURL = '/Cnvs';
 
 router.get('/', function(req, res) {
-   console.log('getting other');
-   var owner = req.query.owner || req.query.id;
-   console.log('owner: ' + owner);
+   var owner = (req.query.owner || req.query.id) || null;
 
-   req.cnn.chkQry(req.validator, 'select id, title from Conversation', null,
-   function(err, cnvs) {
-      if (!err)
-         res.json(cnvs);
-      req.cnn.release();
-   });
+   if (owner)
+      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation where id = ?', [owner],
+         function(err, cnvs) {
+            if (!err)
+               res.json(cnvs);
+            req.cnn.release();
+         });
+   else 
+      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation', null,
+         function(err, cnvs) {
+            if (!err)
+               res.json(cnvs);
+            req.cnn.release();
+         });
 });
 
 router.get('/:id', function(req, res) {
-   console.log('getting');
-   var owner = req.query.owner || req.query.id;
-   console.log('owner: ' + owner);
+   var cnvId = req.params.id;
+   var cnn = req.cnn;
+   var vld = req.validator;
 
+   async.waterfall([
+      function(cb) {
+         if (!(isNaN(cnvId))) 
+            cnn.chkQry('select id, title, lastMessage, ownerId from Conversation where id = ?', cnvId, cb);
+         else
+            cb();
+      },
+      function(existingCnv, fields, cb) {
+         if (vld.check(existingCnv.length, Tags.notFound, cb))
+            res.json(existingCnv)
+         cb();
+      }],
+      function(err) {
+         if (!err)
+            res.status(200).end();
+         cnn.release();
+      }
+   );
 })
 
 router.post('/', function(req, res) {
@@ -46,7 +70,7 @@ router.post('/', function(req, res) {
          res.location(router.baseURL + '/' + insRes.insertId).end();
          cb();
       }],
-      function() {
+      function(err) {
          cnn.release();
       });
 });

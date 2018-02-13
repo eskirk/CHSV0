@@ -46,9 +46,8 @@ router.get('/:id', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         if (vld.checkPrsOK(req.params.id, cb)) {
+         if (vld.checkPrsOK(req.params.id, cb)) 
             cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
-         }  
       },
       function(prsArr, fields, cb) {
          if (vld.check(prsArr.length, Tags.notFound, null, cb)) {
@@ -167,30 +166,18 @@ router.delete('/:id', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         if (vld.checkAdmin()) {
+         if (vld.checkAdmin()) 
             cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
-         }
       },
       function(prss, fields, cb) {
-         if (vld.check(prss.length, Tags.notFound, null, cb)) {
+         if (vld.check(prss.length, Tags.notFound, null, cb)) 
             cnn.chkQry('delete from Person where id = ?', [req.params.id], cb);
-         }
       }],
       function(err) {
          if (!err)
             res.status(200).end();
          cnn.release();
       });
-   // if (vld.checkAdmin())
-   //    vld.chkQry('DELETE from Person where id = ?', [req.params.id],
-   //    function (err, result) {
-   //       if (!err || vld.check(result.affectedRows, Tags.notFound))
-   //          res.status(200).end();
-   //       req.cnn.release();
-   //    });
-   // else {
-   //    req.cnn.release();
-   // }
 });
 
 module.exports = router;
