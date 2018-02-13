@@ -90,17 +90,18 @@ router.post('/', function(req, res) {
    // null needs to be passed or else cb would become the "params" field and we can lose connections
    async.waterfall([
    function(cb) { 
-      if ((vld.hasFields(body, ["email", "lastName", "password", "role"], cb)) ||
-       (vld.hasFields(body, ["email", "lastName", "role"]) && admin) &&
+      if ((vld.hasFields(body, ["email", "lastName", "password", "role"], cb) ||
+       (vld.hasFields(body, ["email", "lastName", "role"], cb) && admin)) &&
        vld.chain(body.role === 0 || admin, Tags.noPermission)
        .chain(body.termsAccepted || admin, Tags.noTerms)
-      //  .chain(body.password || admin, Tags.missingField, ["password"])
+       .chain(body.password || admin, Tags.missingField, ["password"])
        .check(body.role >= 0, Tags.badValue, ["role"], cb)) {
          cnn.chkQry('select * from Person where email = ?', body.email, cb);
       }
    },
    function(existingPrss, fields, cb) {  
-      if (vld.check(!existingPrss.length, Tags.dupEmail, null, cb)) {
+      if (vld.check(!existingPrss.length, Tags.dupEmail, null, cb) && 
+            vld.hasExtraFields(body, Object.keys(body), cb)) {
          body.termsAccepted = body.termsAccepted && new Date();
          cnn.chkQry('insert into Person set ?', body, cb);
       }
@@ -129,20 +130,27 @@ router.put('/:id', function(req, res) {
 
    async.waterfall([
    function(cb) {
-      if (vd.checkPrsOK(id, cb) && 
+      if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
          vld.chain(!("termsAccepted" in body), Tags.forbiddenField, ['termsAccepted'])
          .chain(!("whenRegistered" in body), Tags.forbiddenField, ['whenRegistered'])
+         .chain(!("email" in body), Tags.forbiddenField, ["email"])
          .chain(!("password" in body) || body.password, Tags.badValue, ['password'])
          .chain(!("password" in body) || ("oldPassword" in body) || admin, Tags.noOldPwd, ['password'])
-         .check(body.role && admin, Tags.badValue, ['role'], cb)) 
-            cnn.chkQry('select * from Person where id = ?', id, cb);
+         .check(!("role" in body) || admin, Tags.badValue, ['role'], cb)) {
+            cnn.chkQry('select * from Person where id = ?', [id], cb);
+         }
+      if (!(Object.keys(body).length)) {
+         res.status(200).end();
+         cb();
+      }         
    },
    function(prss, fields, cb) {
-      if (vld.check(prss.length, Tag.notFound, null, cb) &&
+      if (vld.check(prss.length, Tags.notFound, null, cb) && 
+          vld.hasExtraFields(body, Object.keys(body), cb) &&
           vld.check(admin || !("password" in body) ||
-          body.oldPassword === prs[0].password, Tags.oldPwdMismatch, null, cb)) {
+          body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null, cb)) {
          delete body.oldPassword;
-         cnn.chkQry("update Person set ? where id = ?", [body, id], cb);
+         cnn.chkQry('update Person set ? where id = ?', [body, id], cb);
       }
    }],
    function(err) {
@@ -154,17 +162,35 @@ router.put('/:id', function(req, res) {
 
 router.delete('/:id', function(req, res) {
    var vld = req.validator;
+   var cnn = req.cnn;
 
-   if (vld.checkAdmin())
-      req.cnn.query('DELETE from Person where id = ?', [req.params.id],
-      function (err, result) {
-         if (!err || vld.check(result.affectedRows, Tags.notFound))
+
+   async.waterfall([
+      function(cb) {
+         if (vld.checkAdmin()) {
+            cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
+         }
+      },
+      function(prss, fields, cb) {
+         if (vld.check(prss.length, Tags.notFound, null, cb)) {
+            cnn.chkQry('delete from Person where id = ?', [req.params.id], cb);
+         }
+      }],
+      function(err) {
+         if (!err)
             res.status(200).end();
-         req.cnn.release();
+         cnn.release();
       });
-   else {
-      req.cnn.release();
-   }
+   // if (vld.checkAdmin())
+   //    vld.chkQry('DELETE from Person where id = ?', [req.params.id],
+   //    function (err, result) {
+   //       if (!err || vld.check(result.affectedRows, Tags.notFound))
+   //          res.status(200).end();
+   //       req.cnn.release();
+   //    });
+   // else {
+   //    req.cnn.release();
+   // }
 });
 
 module.exports = router;

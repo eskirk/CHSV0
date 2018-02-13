@@ -6,6 +6,10 @@ var async = require('async');
 router.baseURL = '/Cnvs';
 
 router.get('/', function(req, res) {
+   console.log('getting other');
+   var owner = req.query.owner || req.query.id;
+   console.log('owner: ' + owner);
+
    req.cnn.chkQry(req.validator, 'select id, title from Conversation', null,
    function(err, cnvs) {
       if (!err)
@@ -14,26 +18,37 @@ router.get('/', function(req, res) {
    });
 });
 
+router.get('/:id', function(req, res) {
+   console.log('getting');
+   var owner = req.query.owner || req.query.id;
+   console.log('owner: ' + owner);
+
+})
+
 router.post('/', function(req, res) {
    var vld = req.validator;
    var body = req.body;
    var cnn = req.cnn;
 
    async.waterfall([
-   function(cb) {
-      cnn.chkQry('select * from Conversation where title = ?', body.title, cb);
-   },
-   function(existingCnv, fields, cb) {
-      if (vld.check(!existingCnv.length, Tags.dupTitle, null, cb))
-         cnn.chkQry("insert into Conversation set ?", body, cb);
-   },
-   function(insRes, fields, cb) {
-      res.location(router.baseURL + '/' + insRes.insertId).end();
-      cb();
-   }],
-   function() {
-      cnn.release();
-   });
+      function(cb) {
+         if (vld.check(('title' in body) && body['title'].length > 0, Tags.missingField, ['title'], cb) &&
+             vld.check(body['title'].length <= 80, Tags.badValue, ['title'], cb))
+            cnn.chkQry('select * from Conversation where title = ?', body.title, cb);
+      },
+      function(existingCnv, fields, cb) {
+         if (vld.check(!existingCnv.length, Tags.dupTitle, null, cb)) {
+            body.ownerId = req.session.id;
+            cnn.chkQry("insert into Conversation set ?", body, cb);
+         }
+      },
+      function(insRes, fields, cb) {
+         res.location(router.baseURL + '/' + insRes.insertId).end();
+         cb();
+      }],
+      function() {
+         cnn.release();
+      });
 });
 
 router.put('/:cnvId', function(req, res) {

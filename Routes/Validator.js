@@ -19,6 +19,7 @@ Validator.Tags = {
    forbiddenRole: "forbiddenRole",  // Cannot set to this role
    forbiddenField: "forbiddenField",// Cannot change this field 
    noOldPwd: "noOldPwd",            // Change of password requires an old password
+   oldPwdMismatch: "oldPwdMismatch",// Old password is incorrect
    dupTitle: "dupTitle",            // Title duplicates an existing Conversation title
    dupEnrollment: "dupEnrollment",  // Duplicate enrollment
    queryFailed: "queryFailed"
@@ -71,7 +72,7 @@ Validator.prototype.checkAdmin = function(cb) {
 // Validate that AU is the specified person or is an admin
 Validator.prototype.checkPrsOK = function(prsId, cb) {
    return this.check(this.session &&
-    (this.session.isAdmin() || this.session.id === prsId),
+    (this.session.isAdmin() || this.session.id === Number(prsId)),
     Validator.Tags.noPermission, null, cb);
 };
 
@@ -80,10 +81,23 @@ Validator.prototype.hasFields = function(obj, fieldList, cb) {
    var self = this;
 
    fieldList.forEach(function(name) {
-      self.chain(obj.hasOwnProperty(name), Validator.Tags.missingField, [name]);
+      self.chain(obj.hasOwnProperty(name) && obj[name] != null, Validator.Tags.missingField, [name]);
    });
 
    return this.check(true, null, null, cb);
 };
+
+Validator.prototype.hasExtraFields = function(obj, fieldList, cb) {
+   var self = this;
+   var acceptedFields = ["email", "firstName", "lastName", "password", "termsAccepted", "role", "whenRegistered", "oldPassword"]
+
+   fieldList.forEach(function(name) {
+      console.log(name + ' ' + acceptedFields.includes(name));
+      self.chain(acceptedFields.includes(name), Validator.Tags.forbiddenField, [name])
+   });
+
+   console.log(this.errors);
+   return this.check(true, null, null, cb);
+}
 
 module.exports = Validator;

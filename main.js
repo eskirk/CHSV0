@@ -10,7 +10,9 @@ var CnnPool = require('./Routes/CnnPool.js');
 var async = require('async');
 
 var app = express();
-//app.use(function(req, res, next) {console.log("Hello"); next();});
+
+var port = process.argv[3] || 5015;
+
 // Static paths to be served like index.html and all client side js
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -131,6 +133,6 @@ app.use(function(err, req, res, next) {
    req.cnn && req.cnn.release();
 });
 
-app.listen(5015, function () {
-   console.log('App Listening on port 5015');
+app.listen(port, function () {
+   console.log('App Listening on port ' + port);
 });

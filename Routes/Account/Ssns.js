@@ -16,6 +16,7 @@ router.get('/', function(req, res) {
       }
       res.status(200).json(body);
    }
+   req.cnn.release();
 });
 
 router.post('/', function(req, res) {
@@ -26,7 +27,8 @@ router.post('/', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         if (vld.hasFields(body, ["email", "password"], cb)) {
+         if (vld.check(Object.keys(body).length, Tags.badLogin, null, cb) && 
+               vld.hasFields(body, ["email", "password"], cb)) {
             cnn.chkQry('select * from Person where email = ?', [body.email], cb);
          }
       },
@@ -35,6 +37,7 @@ router.post('/', function(req, res) {
          Tags.badLogin, null, cb)) {
             cookie = ssnUtil.makeSession(existingPrss[0], res);
             res.location(router.baseURL + '/' + cookie).status(200).end()
+            cb();
          }
       }],
       function(err) {
@@ -51,14 +54,24 @@ router.delete('/:cookie', function(req, res) {
    req.cnn.release();
 });
 
-router.get('/cookie', function(req, res) {
+router.get('/:cookie', function(req, res) {
    var cookie = req.params.cookie;
    var vld = req.validator;
 
-   if (vld.checkPrsOK(ssnUtil.sessions[cookie].id)) {
-      res.json({prsId: req.session.id});
-   }
-   req.cnn.release();
+   async.waterfall([
+      function(cb) {
+         console.log('SESSION: ' + ssnUtil.session[cookie].id);
+         if (vld.checkPrsOK(ssnUtil.sessions[cookie].id, cb)) {
+            res.json({prsId: req.session.id});  
+            cb();
+         }
+      }],
+      function(err) {
+         if (!err)
+            res.status(200).end();
+         console.log('releasing connection');
+         req.cnn.release();
+      });
 });
 
 module.exports = router;
