@@ -8,7 +8,7 @@ var CnnPool = function() {
    this.pool = mysql.createPool(poolCfg);
 };
 
-CnnPool.PoolSize = 4;
+CnnPool.PoolSize = 1;
 
 // Conventional getConnection, drawing from the pool
 CnnPool.prototype.getConnection = function(cb) {
@@ -24,14 +24,11 @@ CnnPool.router = function(req, res, next) {
       else {
          console.log("Connection acquired");
          cnn.chkQry = function(qry, prms, cb) {
-            console.log('querying: ' + qry + ', params: ' + prms);
             // Run real qry, checking for error
-            this.query(qry, prms, function(err, res, fields) {
-               if (err) {
-                  console.log('err: ' + err + '\n res: ' + res + '\n fields: ' + fields);
+            this.query(qry, prms, function(err, results, fields) {
+               if (err) 
                   res.status(500).json('Failed query ' + qry);
-               } 
-               cb(err, res, fields);
+               cb(err, results, fields);
             });
          };
          req.cnn = cnn;

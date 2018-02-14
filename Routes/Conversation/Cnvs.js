@@ -9,14 +9,16 @@ router.get('/', function(req, res) {
    var owner = (req.query.owner || req.query.id) || null;
 
    if (owner)
-      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation where id = ?', [owner],
+      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation\
+       where id = ?', [owner],
          function(err, cnvs) {
             if (!err)
                res.json(cnvs);
             req.cnn.release();
          });
    else 
-      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation', null,
+      req.cnn.chkQry('select id, title, lastMessage, ownerId from \
+       Conversation', null,
          function(err, cnvs) {
             if (!err)
                res.json(cnvs);
@@ -32,7 +34,8 @@ router.get('/:id', function(req, res) {
    async.waterfall([
       function(cb) {
          if (!(isNaN(cnvId))) 
-            cnn.chkQry('select id, title, lastMessage, ownerId from Conversation where id = ?', cnvId, cb);
+            cnn.chkQry('select id, title, lastMessage, ownerId from \
+             Conversation where id = ?', cnvId, cb);
          else
             cb();
       },
@@ -56,9 +59,12 @@ router.post('/', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         if (vld.check(('title' in body) && body['title'].length > 0, Tags.missingField, ['title'], cb) &&
-             vld.check(body['title'].length <= 80, Tags.badValue, ['title'], cb))
-            cnn.chkQry('select * from Conversation where title = ?', body.title, cb);
+         if (vld.check(('title' in body) && body['title'].length > 0, 
+              Tags.missingField, ['title'], cb) && 
+              vld.check(body['title'].length <= 80, Tags.badValue, ['title'], 
+              cb))
+            cnn.chkQry('select * from Conversation where title = ?', 
+             body.title, cb);
       },
       function(existingCnv, fields, cb) {
          if (vld.check(!existingCnv.length, Tags.dupTitle, null, cb)) {
@@ -174,7 +180,7 @@ router.post('/:cnvId/Msgs', function(req, res){
    function(insRes, fields, cb) {
       res.location(router.baseURL + '/' + insRes.insertId).end();
       cnn.chkQry("update Conversation set lastPost = ? where id = ?",
-       [now, cnvId], cb);
+       [new Date(), cnvId], cb);
    }],
    function(err) {
       cnn.release();

@@ -1,5 +1,3 @@
-use webdev;
-
 create table Person (
    id int auto_increment primary key,
    firstName varchar(30),

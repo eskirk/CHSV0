@@ -99,8 +99,7 @@ router.post('/', function(req, res) {
       }
    },
    function(existingPrss, fields, cb) {  
-      if (vld.check(!existingPrss.length, Tags.dupEmail, null, cb) && 
-            vld.hasExtraFields(body, Object.keys(body), cb)) {
+      if (vld.check(!existingPrss.length, Tags.dupEmail, null, cb)) {
          body.termsAccepted = body.termsAccepted && new Date();
          cnn.chkQry('insert into Person set ?', body, cb);
       }
@@ -138,10 +137,10 @@ router.put('/:id', function(req, res) {
          .check(!("role" in body) || admin, Tags.badValue, ['role'], cb)) {
             cnn.chkQry('select * from Person where id = ?', [id], cb);
          }
-      if (!(Object.keys(body).length)) {
+      if (Object.keys(body).length == 0) {
          res.status(200).end();
-         cb();
-      }         
+         cnn.release();
+      }
    },
    function(prss, fields, cb) {
       if (vld.check(prss.length, Tags.notFound, null, cb) && 
@@ -163,10 +162,9 @@ router.delete('/:id', function(req, res) {
    var vld = req.validator;
    var cnn = req.cnn;
 
-
    async.waterfall([
       function(cb) {
-         if (vld.checkAdmin()) 
+         if (vld.checkAdmin(cb)) 
             cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
       },
       function(prss, fields, cb) {

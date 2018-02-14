@@ -45,6 +45,12 @@ app.use('/Prss', require('./Routes/Account/Prss.js'));
 app.use('/Ssns', require('./Routes/Account/Ssns.js'));
 app.use('/Cnvs', require('./Routes/Conversation/Cnvs.js'));
 
+// Catches blank posts to the server
+app.post('', function(req, res) {
+   res.status(404).end();
+   req.cnn.release();
+});
+
 // Special debugging route for /DB DELETE.  Clears all table contents,
 //resets all auto_increment keys to start at 1, and reinserts one admin user.
 app.delete('/DB', function(req, res) {
