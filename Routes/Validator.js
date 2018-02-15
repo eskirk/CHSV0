@@ -92,11 +92,9 @@ Validator.prototype.hasExtraFields = function(obj, fieldList, cb) {
    var acceptedFields = ["email", "firstName", "lastName", "password", "termsAccepted", "role", "whenRegistered", "oldPassword"]
 
    fieldList.forEach(function(name) {
-      console.log(name + ' ' + acceptedFields.includes(name));
       self.chain(acceptedFields.includes(name), Validator.Tags.forbiddenField, [name])
    });
 
-   console.log(this.errors);
    return this.check(true, null, null, cb);
 }
 

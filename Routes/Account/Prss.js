@@ -8,14 +8,14 @@ router.baseURL = '/Prss';
 
 // get Prss/{email=<email>}
 router.get('/', function(req, res) {
-   var email = req.session.isAdmin() && req.query.email ||
-    !req.session.isAdmin() && req.session.email;
+   var email = (req.session.isAdmin() && req.query.email ||
+                !req.session.isAdmin() && req.query.email);
    var cnn = req.cnn;
    var vld = req.vld;
 
-   if (email) 
-      cnn.query('select id, email from Person where email = ?', [email],
-      function(err, result) {
+   if (email) {
+      cnn.chkQry('select id, email from Person where left(email, ' + 
+      'length(?)) = ?', [email, email], function(err, result) {
          if (err) {
             cnn.destroy();
             res.status(500).json('Failed query');
@@ -25,8 +25,9 @@ router.get('/', function(req, res) {
             cnn.release();
          }
       });
+   }
    else 
-      cnn.query('select id, email from Person', 
+      cnn.chkQry('select id, email from Person', null,
       function(err, result) { 
          if (err) {
             cnn.destroy();
@@ -51,6 +52,7 @@ router.get('/:id', function(req, res) {
       },
       function(prsArr, fields, cb) {
          if (vld.check(prsArr.length, Tags.notFound, null, cb)) {
+            delete prsArr[0].password;
             res.json(prsArr);
             cb();
          }

@@ -46,8 +46,9 @@ router.post('/', function(req, res) {
 });
 
 router.delete('/:cookie', function(req, res) {
-   if (req.validator.check(req.params.cookie === req.cookies[ssnUtil.cookieName],
-    Tags.noPermission)) {
+   var admin = req.session && req.session.isAdmin()
+   if (admin || req.validator.check(req.params.cookie === 
+       req.cookies[ssnUtil.cookieName], Tags.noPermission)) {
       ssnUtil.deleteSession(req.params.cookie);
       res.status(200).end();
    }
@@ -60,10 +61,12 @@ router.get('/:cookie', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         console.log('SESSION: ' + ssnUtil.session[cookie].id);
-         if (vld.checkPrsOK(ssnUtil.sessions[cookie].id, cb)) {
-            res.json({prsId: req.session.id});  
-            cb();
+         if (vld.check(ssnUtil.sessions[cookie], Tags.notFound, null, cb)) {
+            if (vld.checkPrsOK(ssnUtil.sessions[cookie].id, cb)) {
+               res.json({cookie: cookie, prsId: req.session.id, 
+               loginTime: req.session.loginTime});  
+               cb();
+            }
          }
       }],
       function(err) {

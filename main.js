@@ -11,7 +11,7 @@ var async = require('async');
 
 var app = express();
 
-var port = process.argv[3] || 5015;
+var port = process.argv[process.argv.indexOf('-p') + 1] || 5015;
 
 // Static paths to be served like index.html and all client side js
 app.use(express.static(path.join(__dirname, 'public')));
@@ -44,6 +44,7 @@ app.use(CnnPool.router);
 app.use('/Prss', require('./Routes/Account/Prss.js'));
 app.use('/Ssns', require('./Routes/Account/Ssns.js'));
 app.use('/Cnvs', require('./Routes/Conversation/Cnvs.js'));
+app.use('/Msgs', require('./Routes/Conversation/Msgs.js'));
 
 // Catches blank posts to the server
 app.post('', function(req, res) {
