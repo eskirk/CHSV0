@@ -8,36 +8,44 @@ router.baseURL = '/Prss';
 
 // get Prss/{email=<email>}
 router.get('/', function(req, res) {
-   var email = (req.session.isAdmin() && req.query.email ||
-                !req.session.isAdmin() && req.query.email);
+   var email = req.query.email;
    var cnn = req.cnn;
    var vld = req.vld;
-
-   if (email) {
-      cnn.chkQry('select id, email from Person where left(email, ' + 
-      'length(?)) = ?', [email, email], function(err, result) {
-         if (err) {
-            cnn.destroy();
-            res.status(500).json('Failed query');
-         } 
-         else {
-            res.status(200).json(result);
-            cnn.release();
-         }
-      });
+   var cb = function(err, result) {
+      if (err) {
+         cnn.destroy();
+         res.status(500).json('Failed query');
+      } 
+      else {
+         res.status(200).json(result);
+         cnn.release();
+      }
    }
-   else 
-      cnn.chkQry('select id, email from Person', null,
-      function(err, result) { 
-         if (err) {
-            cnn.destroy();
-            res.status(500).json('Failed query');
-         }
-         else {
-            res.status(200).json(result);
-            cnn.release();
-         }
-      });
+
+   // if an email was specified and the user is an admin
+   if (email && req.session.isAdmin()) {
+      cnn.chkQry('select id, email from Person where left(email, ' + 
+      'length(?)) = ?', [email, email], cb);
+   }
+   // if the email was specified and the user is not an admin
+   else if (email && !req.session.isAdmin()) {
+      if (req.session.email.toLowerCase().indexOf(email.toLowerCase()) != -1)
+         cnn.chkQry('select id, email from person where email = ?', 
+          [req.session.email], cb);
+      else {
+         res.status(200).json([]);
+         cnn.release();
+      } 
+   }
+   // if there was no email specified and the user is an admin
+   else if (req.session.isAdmin()) {
+      cnn.chkQry('select id, email from Person', null, cb);
+   }
+   // if there was no email specified and the user is not an admin
+   else {
+      cnn.chkQry('select id, email from Person where email = ?', 
+       [req.session.email], cb);
+   }
 });
 
 // get Prss/id
@@ -178,6 +186,13 @@ router.delete('/:id', function(req, res) {
       function(prss, fields, cb) {
          if (vld.check(prss.length, Tags.notFound, null, cb)) 
             cnn.chkQry('delete from Person where id = ?', [req.params.id], cb);
+      },
+      function(cnvs, fields, cb) {
+         cnn.chkQry('delete from Conversation where ownerId = ?', 
+          [req.params.id], cb);
+      },
+      function(cnvs, fields, cb) {
+         cnn.chkQry('delete from Message where prsId = ?', [req.params.id], cb);
       }],
       function(err) {
          if (!err)

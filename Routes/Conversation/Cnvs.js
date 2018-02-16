@@ -10,7 +10,7 @@ router.get('/', function(req, res) {
 
    if (owner)
       req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation\
-       where id = ?', [owner],
+       where ownerId = ?', [owner],
          function(err, cnvs) {
             if (!err)
                res.json(cnvs);
@@ -120,12 +120,15 @@ router.delete('/:cnvId', function(req, res) {
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
-         vld.checkPrsOK(cnvs[0].prsID, cb))
+          vld.checkPrsOK(cnvs[0].ownerId, cb)) 
             cnn.chkQry('delete from Conversation where id = ?', [cnvId], cb);
+      },
+      function(cnvs, fields, cb) {
+         vld.chkQry('delete from Message where cnvId = ?', [cnvId], cb);
       }],
       function(err) {
          if (!err)
-            res.status(200);
+            res.status(200).end();
          cnn.release();
       });
 });
@@ -187,8 +190,8 @@ router.post('/:cnvId/Msgs', function(req, res){
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
-             vld.check('content' in body, Tags.missingField, ['content'], cb)&&
-             vld.check(content.length < 5001, Tags.badValue, ['content'], cb))
+             vld.check('content' in body, Tags.missingField, ['content'], cb) &&
+             vld.check(content.length <= 5000, Tags.badValue, ['content'], cb))
             cnn.chkQry('insert into Message set ?',
             {cnvId: cnvId, prsId: req.session.id,
             whenMade: now = new Date(), content: body.content}, cb);
