@@ -92,15 +92,15 @@ router.put('/:cnvId', function(req, res) {
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
+             vld.check(body.title.length, Tags.badValue, ['title'], cb) &&
              vld.checkPrsOK(cnvs[0].ownerId, cb))
             cnn.chkQry('select * from Conversation where id <> ? && title = ?',
              [cnvId, body.title], cb);
       },
       function(sameTtl, fields, cb) {
-         if (vld.check(!sameTtl.length, Tags.dupTitle, null, cb) &&
-             vld.check(body.title.length, Tags.badValue, ['title'], cb))
+         if (vld.check(!sameTtl.length, Tags.dupTitle, null, cb))
             cnn.chkQry("update Conversation set title = ? where id = ?",
-            [body.title, cnvId], cb);
+             [body.title, cnvId], cb);
       }],
       function(err) {
          if (!err)
@@ -136,7 +136,8 @@ router.get('/:cnvId/Msgs', function(req, res) {
    var cnn = req.cnn;
    var params = [cnvId];
    var query = 'select m.id, whenMade, email, content from Conversation c' +
-    ' join Message m on cnvId = c.id join Person p on prsId = p.id where c.id = ?';
+    ' join Message m on cnvId = c.id join Person p on prsId = p.id where ' + 
+    'c.id = ?';
 
    // Add a clause for dateTime
    if (req.query.dateTime) {

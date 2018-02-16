@@ -48,7 +48,7 @@ router.get('/:id', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.checkPrsOK(req.params.id, cb)) 
-            cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
+            cnn.chkQry('select * from Person where id = ?', req.params.id, cb);
       },
       function(prsArr, fields, cb) {
          if (vld.check(prsArr.length, Tags.notFound, null, cb)) {
@@ -129,35 +129,40 @@ router.put('/:id', function(req, res) {
    var id = req.params.id
 
    async.waterfall([
-   function(cb) {
-      if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
-         vld.chain(!("termsAccepted" in body), Tags.forbiddenField, ['termsAccepted'])
-         .chain(!("whenRegistered" in body), Tags.forbiddenField, ['whenRegistered'])
-         .chain(!("email" in body), Tags.forbiddenField, ["email"])
-         .chain(!("password" in body) || body.password, Tags.badValue, ['password'])
-         .chain(!("password" in body) || ("oldPassword" in body) || admin, Tags.noOldPwd, ['password'])
-         .check(!("role" in body) || admin, Tags.badValue, ['role'], cb)) {
-            cnn.chkQry('select * from Person where id = ?', [id], cb);
+      function(cb) {
+         if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
+            vld.chain(!("termsAccepted" in body), Tags.forbiddenField, 
+             ['termsAccepted'])
+            .chain(!("whenRegistered" in body), Tags.forbiddenField, 
+             ['whenRegistered'])
+            .chain(!("email" in body), Tags.forbiddenField, ["email"])
+            .chain(!("password" in body) || body.password, Tags.badValue, 
+             ['password'])
+            .chain(!("password" in body) || ("oldPassword" in body) || admin, 
+             Tags.noOldPwd, ['password'])
+            .check(!("role" in body) || admin, Tags.badValue, ['role'], cb)) {
+               cnn.chkQry('select * from Person where id = ?', [id], cb);
+            }
+         if (Object.keys(body).length == 0) {
+            res.status(200).end();
+            cnn.release();
          }
-      if (Object.keys(body).length == 0) {
-         res.status(200).end();
+      },
+      function(prss, fields, cb) {
+         if (vld.check(prss.length, Tags.notFound, null, cb) && 
+            vld.hasExtraFields(body, Object.keys(body), cb) &&
+            vld.check(admin || !("password" in body) ||
+            body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null,
+             cb)) {
+            delete body.oldPassword;
+            cnn.chkQry('update Person set ? where id = ?', [body, id], cb);
+         }
+      }],
+      function(err) {
+         if (!err)
+            res.status(200).end();
          cnn.release();
-      }
-   },
-   function(prss, fields, cb) {
-      if (vld.check(prss.length, Tags.notFound, null, cb) && 
-          vld.hasExtraFields(body, Object.keys(body), cb) &&
-          vld.check(admin || !("password" in body) ||
-          body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null, cb)) {
-         delete body.oldPassword;
-         cnn.chkQry('update Person set ? where id = ?', [body, id], cb);
-      }
-   }],
-   function(err) {
-      if (!err)
-         res.status(200).end();
-      cnn.release();
-   });
+      });
 });
 
 router.delete('/:id', function(req, res) {
@@ -167,7 +172,8 @@ router.delete('/:id', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.checkAdmin(cb)) 
-            cnn.chkQry('select * from Person where id = ?', [req.params.id], cb);
+            cnn.chkQry('select * from Person where id = ?', [req.params.id], 
+             cb);
       },
       function(prss, fields, cb) {
          if (vld.check(prss.length, Tags.notFound, null, cb)) 

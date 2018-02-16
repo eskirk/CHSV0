@@ -54,7 +54,8 @@ exports.router = function(req, res, next) {
    // If we present a session cookie that corresponds with one in |sessions|...
    if (req.cookies[cookieName] && sessions[req.cookies[cookieName]]) {
       // If the session was last used more than |duration| mS ago..
-      if (sessions[req.cookies[cookieName]].lastUsed < new Date().getTime() - duration) {
+      if (sessions[req.cookies[cookieName]].lastUsed < new Date().getTime() -
+       duration) {
          delete sessions[req.cookies[cookieName]];
       }
       else {

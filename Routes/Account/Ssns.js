@@ -29,11 +29,13 @@ router.post('/', function(req, res) {
       function(cb) {
          if (vld.check(Object.keys(body).length, Tags.badLogin, null, cb) && 
                vld.hasFields(body, ["email", "password"], cb)) {
-            cnn.chkQry('select * from Person where email = ?', [body.email], cb);
+            cnn.chkQry('select * from Person where email = ?', [body.email],
+             cb);
          }
       },
       function(existingPrss, fields, cb) {
-         if (vld.check(existingPrss.length && existingPrss[0].password === body.password, 
+         if (vld.check(existingPrss.length && existingPrss[0].password === 
+          body.password, 
          Tags.badLogin, null, cb)) {
             cookie = ssnUtil.makeSession(existingPrss[0], res);
             res.location(router.baseURL + '/' + cookie).status(200).end()
