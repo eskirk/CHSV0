@@ -6,19 +6,19 @@ var async = require('async');
 router.baseURL = '/Cnvs';
 
 router.get('/', function(req, res) {
-   var owner = (req.query.owner || req.query.id) || null;
+   var owner = req.query.owner || null;
 
    if (owner)
-      req.cnn.chkQry('select id, title, lastMessage, ownerId from Conversation\
-       where ownerId = ?', [owner],
+      req.cnn.chkQry('select id, title, ownerId, lastMessage from ' +
+       'Conversation where ownerId = ?', [owner],
          function(err, cnvs) {
             if (!err)
                res.json(cnvs);
             req.cnn.release();
          });
    else 
-      req.cnn.chkQry('select id, title, lastMessage, ownerId from \
-       Conversation', null,
+      req.cnn.chkQry('select id, title, ownerId, lastMessage from ' +
+      'Conversation', null,
          function(err, cnvs) {
             if (!err)
                res.json(cnvs);
@@ -26,16 +26,15 @@ router.get('/', function(req, res) {
          });
 });
 
-router.get('/:id', function(req, res) {
-   var cnvId = req.params.id;
+router.get('/:cnvId', function(req, res) {
+   var id = req.params.cnvId;
    var cnn = req.cnn;
    var vld = req.validator;
 
    async.waterfall([
       function(cb) {
-         if (vld.check(!isNaN(cnvId), Tags.notFound, null, cb))
-            cnn.chkQry('select id, title, lastMessage, ownerId from \
-             Conversation where id = ?', [cnvId], cb);
+         cnn.chkQry('select id, title, ownerId, lastMessage from ' +
+          'Conversation where id = ?', [id], cb);
       },
       function(existingCnv, fields, cb) {
          if (vld.check(existingCnv.length, Tags.notFound, null, cb)) {
@@ -124,7 +123,7 @@ router.delete('/:cnvId', function(req, res) {
             cnn.chkQry('delete from Conversation where id = ?', [cnvId], cb);
       },
       function(cnvs, fields, cb) {
-         vld.chkQry('delete from Message where cnvId = ?', [cnvId], cb);
+         cnn.chkQry('delete from Message where cnvId = ?', [cnvId], cb);
       }],
       function(err) {
          if (!err)
@@ -137,17 +136,17 @@ router.get('/:cnvId/Msgs', function(req, res) {
    var vld = req.validator;
    var cnvId = req.params.cnvId;
    var cnn = req.cnn;
-   var params = [cnvId];
+   var params = [Number(cnvId)];
    var query = 'select m.id, whenMade, email, content from Conversation c' +
-    ' join Message m on cnvId = c.id join Person p on prsId = p.id where ' + 
-    'c.id = ?';
+    ' join Message m on cnvId = c.id join Person p on prsId = p.id where' +
+    ' c.id = ?';
 
    // Add a clause for dateTime
    if (req.query.dateTime) {
       query += ' and whenMade <= ?';
       params.push(req.query.dateTime);
    }
-   query += ' order by whenMade, id'
+   query +=  ' order by whenMade, id'
    // And finally add a limit clause and parameter if indicated.
    if (req.query.num) {
       query += ' limit ?';
@@ -155,11 +154,11 @@ router.get('/:cnvId/Msgs', function(req, res) {
    }
 
    async.waterfall([
-      function(cb) {  // Check for existence of conversation
-         cnn.chkQry('select * from Conversation where id = ?', [cnvId], cb);
+      function(cb) {  // Check for existence of messages
+         cnn.chkQry('select * from Message where cnvId = ?', [cnvId], cb);
       },
       function(cnvs, fields, cb) { // Get indicated messages
-         if (Number(req.query.num) === 0) {
+         if (req.query.num == 0) {
             res.json([]);
             res.status(200).end();
             cnn.release();
@@ -179,26 +178,26 @@ router.get('/:cnvId/Msgs', function(req, res) {
 router.post('/:cnvId/Msgs', function(req, res){
    var vld = req.validator;
    var cnn = req.cnn;
-   var cnvId = req.params.cnvId;
+   var id = req.params.cnvId;
    var body = req.body;
    var content = req.body.content;
    var now;
 
    async.waterfall([
       function(cb) {
-         cnn.chkQry('select * from Conversation where id = ?', [cnvId], cb);
+         cnn.chkQry('select * from Conversation where id = ?', [id], cb);
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
              vld.check('content' in body, Tags.missingField, ['content'], cb) &&
              vld.check(content.length <= 5000, Tags.badValue, ['content'], cb))
             cnn.chkQry('insert into Message set ?',
-            {cnvId: cnvId, prsId: req.session.id,
+            {cnvId: id, prsId: req.session.id,
             whenMade: now = new Date(), content: body.content}, cb);
       },
       function(insRes, fields, cb) {
          cnn.chkQry('update Conversation set lastMessage = ? where id = ?',
-         [now, cnvId], cb);
+         [now, id], cb);
          res.status(200).location('/Msgs/' + insRes.insertId).end();
       }],
       function(err) {   

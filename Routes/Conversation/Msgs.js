@@ -13,9 +13,8 @@ router.get('/:id', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.check(!isNaN(id), Tags.notFound, null, cb))
-            cnn.chkQry('select whenMade, content from Message m ' +
-            'where m.id = ?', [id], cb);
-            // 'join Person p on id = m.prsId where m.id = ?', [id], cb);
+            cnn.chkQry('select whenMade, email, content from Message m ' +
+            'join Person p on p.id = m.prsId where m.id = ?', [Number(id)], cb);
       },
       function(msg, fields, cb) {
          if (vld.check(msg.length, Tags.notFound, null, cb)) {

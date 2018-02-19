@@ -11,27 +11,36 @@ router.get('/', function(req, res) {
    var email = req.query.email;
    var cnn = req.cnn;
    var vld = req.vld;
-   var cb = function(err, result) {
-      if (err) {
-         cnn.destroy();
-         res.status(500).json('Failed query');
-      } 
-      else {
-         res.status(200).json(result);
-         cnn.release();
-      }
-   }
 
    // if an email was specified and the user is an admin
    if (email && req.session.isAdmin()) {
       cnn.chkQry('select id, email from Person where left(email, ' + 
-      'length(?)) = ?', [email, email], cb);
+      'length(?)) = ?', [email, email], function(err, result) {
+         if (err) {
+            cnn.destroy();
+            res.status(500).json('Failed query');
+         } 
+         else {
+            res.status(200).json(result);
+            cnn.release();
+         }
+      });
    }
    // if the email was specified and the user is not an admin
    else if (email && !req.session.isAdmin()) {
-      if (req.session.email.toLowerCase().indexOf(email.toLowerCase()) != -1)
-         cnn.chkQry('select id, email from person where email = ?', 
-          [req.session.email], cb);
+      if (req.session.email.toLowerCase().indexOf(email.toLowerCase()) != -1) {
+         cnn.chkQry('select id, email from Person where email = ?', 
+          [req.session.email], function(err, result) {
+            if (err) {
+               cnn.destroy();
+               res.status(500).json('Failed query');
+            } 
+            else {
+               res.status(200).json(result);
+               cnn.release();
+            }
+         });
+      }
       else {
          res.status(200).json([]);
          cnn.release();
@@ -39,12 +48,30 @@ router.get('/', function(req, res) {
    }
    // if there was no email specified and the user is an admin
    else if (req.session.isAdmin()) {
-      cnn.chkQry('select id, email from Person', null, cb);
+      cnn.chkQry('select id, email from Person', null, function(err, result) {
+         if (err) {
+            cnn.destroy();
+            res.status(500).json('Failed query');
+         } 
+         else {
+            res.status(200).json(result);
+            cnn.release();
+         }
+      });
    }
    // if there was no email specified and the user is not an admin
    else {
       cnn.chkQry('select id, email from Person where email = ?', 
-       [req.session.email], cb);
+       [req.session.email], function(err, result) {
+         if (err) {
+            cnn.destroy();
+            res.status(500).json('Failed query');
+         } 
+         else {
+            res.status(200).json(result);
+            cnn.release();
+         }
+      });
    }
 });
 
@@ -138,6 +165,7 @@ router.put('/:id', function(req, res) {
 
    async.waterfall([
       function(cb) {
+         console.log('Updating prss: ' + Object.keys(body));
          if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
             vld.chain(!("termsAccepted" in body), Tags.forbiddenField, 
              ['termsAccepted'])

@@ -98,6 +98,8 @@ Validator.prototype.hasExtraFields = function(obj, fieldList, cb) {
        Validator.Tags.forbiddenField, [name])
    });
 
+   console.log('Extra fields: ', this.errors);
+
    return this.check(true, null, null, cb);
 }
 
