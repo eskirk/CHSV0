@@ -106,7 +106,7 @@ router.post('/', function(req, res) {
 
    if (admin && !body.password)
       body.password = "*";                       // Blocking password
-   body.whenRegistered = new Date();
+   body.whenRegistered = new Date().valueOf();
 
    // takes in two parameters:
    //    - array of callback functions
@@ -137,7 +137,8 @@ router.post('/', function(req, res) {
    },
    function(existingPrss, fields, cb) {  
       if (vld.check(!existingPrss.length, Tags.dupEmail, null, cb)) {
-         body.termsAccepted = body.termsAccepted && new Date();
+         var now = new Date().valueOf();
+         body.termsAccepted = body.termsAccepted && now;
          cnn.chkQry('insert into Person set ?', body, cb);
       }
    },
@@ -165,8 +166,11 @@ router.put('/:id', function(req, res) {
 
    async.waterfall([
       function(cb) {
-         console.log('Updating prss: ' + Object.keys(body));
-         if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
+         if (vld.checkPrsOK(id, cb) && Object.keys(body).length == 0) {
+            res.status(200).end();
+            cnn.release();
+         }
+         else if (vld.checkPrsOK(id, cb) && Object.keys(body).length > 0 &&
             vld.chain(!("termsAccepted" in body), Tags.forbiddenField, 
              ['termsAccepted'])
             .chain(!("whenRegistered" in body), Tags.forbiddenField, 
@@ -178,10 +182,6 @@ router.put('/:id', function(req, res) {
              Tags.noOldPwd, ['password'])
             .check(!("role" in body) || admin, Tags.badValue, ['role'], cb)) {
                cnn.chkQry('select * from Person where id = ?', [id], cb);
-            }
-         if (Object.keys(body).length == 0) {
-            res.status(200).end();
-            cnn.release();
          }
       },
       function(prss, fields, cb) {

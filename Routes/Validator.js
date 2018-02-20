@@ -90,15 +90,13 @@ Validator.prototype.hasFields = function(obj, fieldList, cb) {
 
 Validator.prototype.hasExtraFields = function(obj, fieldList, cb) {
    var self = this;
-   var acceptedFields = ["email", "firstName", "lastName", "password", 
+   var acceptedFields = ["id", "email", "firstName", "lastName", "password", 
     "termsAccepted", "role", "whenRegistered", "oldPassword"]
 
    fieldList.forEach(function(name) {
       self.chain(acceptedFields.indexOf(name) != -1,
        Validator.Tags.forbiddenField, [name])
    });
-
-   console.log('Extra fields: ', this.errors);
 
    return this.check(true, null, null, cb);
 }
