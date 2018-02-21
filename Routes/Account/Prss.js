@@ -162,7 +162,8 @@ router.put('/:id', function (req, res) {
             .chain(!("email" in body), Tags.forbiddenField, ["email"])
             .chain(!("password" in body) || body.password, Tags.badValue, 
              ['password'])
-            .chain(!("role" in body) || admin, Tags.badValue, ['role'])
+            .chain(!("role" in body) || admin || !body.role, Tags.badValue, 
+             ['role'])
             .hasExtraFields(body, Object.keys(body), cb) &&
             vld.check(!("password" in body) || ("oldPassword" in body) || admin, 
              Tags.noOldPwd, null, cb))
