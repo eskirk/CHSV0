@@ -90,7 +90,7 @@ Validator.prototype.hasFields = function(obj, fieldList, cb) {
 
 Validator.prototype.hasExtraFields = function(obj, fieldList, cb) {
    var self = this;
-   var acceptedFields = ["id", "email", "firstName", "lastName", "password", 
+   var acceptedFields = ["email", "firstName", "lastName", "password", 
     "termsAccepted", "role", "whenRegistered", "oldPassword"]
 
    fieldList.forEach(function(name) {

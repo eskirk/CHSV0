@@ -67,7 +67,7 @@ router.post('/', function(req, res) {
       function(existingCnv, fields, cb) {
          if (vld.check(!existingCnv.length, Tags.dupTitle, null, cb)) {
             body.ownerId = req.session.id;
-            cnn.chkQry("insert into Conversation set ?", body, cb);
+            cnn.chkQry('insert into Conversation set ?', body, cb);
          }
       },
       function(insRes, fields, cb) {
@@ -150,7 +150,7 @@ router.get('/:cnvId/Msgs', function(req, res) {
    // And finally add a limit clause and parameter if indicated.
    if (req.query.num) {
       query += ' limit ?';
-      params.push(req.query.num);
+      params.push(Number(req.query.num));
    }
 
    async.waterfall([
