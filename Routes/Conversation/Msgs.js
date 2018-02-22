@@ -14,8 +14,8 @@ router.get('/:id', function(req, res) {
       function(cb) {
          if (vld.check(!isNaN(id), Tags.notFound, null, cb))
             cnn.chkQry('select whenMade, email, content from Message m ' +
-            'join Person p on p.id = m.prsId where m.id = ?', 
-            [Number(id)], cb);
+             'join Person p on p.id = m.prsId where m.id = ?', 
+             [Number(id)], cb);
       },
       function(msg, fields, cb) {
          if (vld.check(msg.length, Tags.notFound, null, cb)) {

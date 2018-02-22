@@ -15,7 +15,22 @@ router.get('/', function (req, res) {
    // if an email was specified and the user is an admin
    if (email && req.session.isAdmin()) {
       cnn.chkQry('select id, email from Person where left(email, ' +
-         'length(?)) = ?', [email, email], function (err, result) {
+       'length(?)) = ?', [email, email], function (err, result) {
+         if (err) {
+            cnn.destroy();
+            res.status(500).json('Failed query');
+         }
+         else {
+            res.status(200).json(result);
+            cnn.release();
+         }
+      });
+   }
+   // if the email was specified and the user is not an admin
+   else if (email && !req.session.isAdmin()) {
+      if (req.session.email.toLowerCase().indexOf(email.toLowerCase()) != -1) {
+         cnn.chkQry('select id, email from Person where email = ?',
+          [req.session.email], function (err, result) {
             if (err) {
                cnn.destroy();
                res.status(500).json('Failed query');
@@ -26,21 +41,6 @@ router.get('/', function (req, res) {
             }
          });
    }
-   // if the email was specified and the user is not an admin
-   else if (email && !req.session.isAdmin()) {
-      if (req.session.email.toLowerCase().indexOf(email.toLowerCase()) != -1) {
-         cnn.chkQry('select id, email from Person where email = ?',
-            [req.session.email], function (err, result) {
-               if (err) {
-                  cnn.destroy();
-                  res.status(500).json('Failed query');
-               }
-               else {
-                  res.status(200).json(result);
-                  cnn.release();
-               }
-            });
-      }
       else {
          res.status(200).json([]);
          cnn.release();
@@ -62,16 +62,16 @@ router.get('/', function (req, res) {
    // if there was no email specified and the user is not an admin
    else {
       cnn.chkQry('select id, email from Person where email = ?',
-         [req.session.email], function (err, result) {
-            if (err) {
+       [req.session.email], function (err, result) {
+         if (err) {
                cnn.destroy();
-               res.status(500).json('Failed query');
-            }
-            else {
-               res.status(200).json(result);
-               cnn.release();
-            }
-         });
+            res.status(500).json('Failed query');
+         }
+         else {
+            res.status(200).json(result);
+            cnn.release();
+         }
+      });
    }
 });
 
@@ -110,14 +110,13 @@ router.post('/', function (req, res) {
 
    async.waterfall([
       function (cb) {
-         if ((vld.hasFields(body, ["email", "lastName", "password", "role"], 
-             cb) ||
-            (vld.hasFields(body, ["email", "lastName", "role"], cb) && 
+         if ((vld.hasFields(body, ["email", "lastName", "password", "role"],
+             cb) || (vld.hasFields(body, ["email", "lastName", "role"], cb) &&
              admin)) &&
-            vld.chain(body.role === 0 || admin, Tags.noPermission)
-               .chain(body.termsAccepted || admin, Tags.noTerms)
-               .chain(body.password || admin, Tags.missingField, ["password"])
-               .check(body.role >= 0, Tags.badValue, ["role"], cb)) {
+             vld.chain(body.role === 0 || admin, Tags.noPermission)
+             .chain(body.termsAccepted || admin, Tags.noTerms)
+             .chain(body.password || admin, Tags.missingField, ["password"])
+             .check(body.role >= 0, Tags.badValue, ["role"], cb)) {
             cnn.chkQry('select * from Person where email = ?', body.email, cb);
          }
       },
@@ -149,29 +148,29 @@ router.put('/:id', function (req, res) {
       delete body.id;
 
    async.waterfall([
-      function(cb) {
+      function (cb) {
          if (vld.checkPrsOK(id, cb) && Object.keys(body).length === 0) {
             res.status(200).end();
             cnn.release();
          }
          else if (vld.checkPrsOK(id, cb) && Object.keys(body).length &&
-            vld.chain(!("whenRegistered" in body), Tags.forbiddenField, 
-             ['whenRegistered'])
-            .chain(!("termsAccepted" in body), Tags.forbiddenField, 
-             ['termsAccepted'])
-            .chain(!("email" in body), Tags.forbiddenField, ["email"])
-            .chain(!("password" in body) || body.password, Tags.badValue, 
-             ['password'])
-            .chain(!("role" in body) || admin || !body.role, Tags.badValue, 
-             ['role'])
-            .hasExtraFields(body, Object.keys(body), cb) &&
-            vld.check(!("password" in body) || ("oldPassword" in body) || admin, 
-             Tags.noOldPwd, null, cb))
+                  vld.chain(!("whenRegistered" in body), Tags.forbiddenField,
+                   ['whenRegistered'])
+                  .chain(!("termsAccepted" in body), Tags.forbiddenField,
+                   ['termsAccepted'])
+                  .chain(!("email" in body), Tags.forbiddenField, ["email"])
+                  .chain(!("password" in body) || body.password, Tags.badValue,
+                   ['password'])
+                  .chain(!("role" in body) || admin || !body.role, 
+                   Tags.badValue, ['role'])
+                  .hasExtraFields(body, Object.keys(body), cb) &&
+                  vld.check(!("password" in body) || ("oldPassword" in body) || 
+                   admin, Tags.noOldPwd, null, cb))
             cnn.chkQry('select * from Person where id = ?', [id], cb);
       },
       function (prss, fields, cb) {
          if (vld.check(prss.length, Tags.notFound, null, cb) &&
-            vld.check(admin || !("password" in body) ||
+             vld.check(admin || !("password" in body) ||
              body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null,
              cb)) {
             delete body.oldPassword;
@@ -188,23 +187,22 @@ router.put('/:id', function (req, res) {
 router.delete('/:id', function (req, res) {
    var vld = req.validator;
    var cnn = req.cnn;
+   var id = req.params.id;
 
    async.waterfall([
       function (cb) {
          if (vld.checkAdmin(cb))
-            cnn.chkQry('select * from Person where id = ?', [req.params.id],
-               cb);
+            cnn.chkQry('select * from Person where id = ?', [id], cb);
       },
       function (prss, fields, cb) {
          if (vld.check(prss.length, Tags.notFound, null, cb))
-            cnn.chkQry('delete from Person where id = ?', [req.params.id], cb);
+            cnn.chkQry('delete from Person where id = ?', [id], cb);
       },
       function (cnvs, fields, cb) {
-         cnn.chkQry('delete from Conversation where ownerId = ?',
-            [req.params.id], cb);
+         cnn.chkQry('delete from Conversation where ownerId = ?', [id], cb);
       },
       function (cnvs, fields, cb) {
-         cnn.chkQry('delete from Message where prsId = ?', [req.params.id], cb);
+         cnn.chkQry('delete from Message where prsId = ?', [id], cb);
       }],
       function (err) {
          if (!err)

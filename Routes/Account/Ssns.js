@@ -28,15 +28,14 @@ router.post('/', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.check(Object.keys(body).length, Tags.badLogin, null, cb) && 
-               vld.hasFields(body, ["email", "password"], cb)) {
+             vld.hasFields(body, ["email", "password"], cb)) {
             cnn.chkQry('select * from Person where email = ?', [body.email],
              cb);
          }
       },
       function(existingPrss, fields, cb) {
          if (vld.check(existingPrss.length && existingPrss[0].password === 
-          body.password, 
-         Tags.badLogin, null, cb)) {
+          body.password, Tags.badLogin, null, cb)) {
             cookie = ssnUtil.makeSession(existingPrss[0], res);
             res.location(router.baseURL + '/' + cookie).status(200).end()
             cb();
@@ -65,8 +64,8 @@ router.get('/:cookie', function(req, res) {
       function(cb) {
          if (vld.check(ssnUtil.sessions[cookie], Tags.notFound, null, cb)) {
             if (vld.checkPrsOK(ssnUtil.sessions[cookie].id, cb)) {
-               res.json({cookie: cookie, prsId: req.session.id, 
-               loginTime: req.session.loginTime});  
+                res.json({cookie: cookie, prsId: req.session.id, 
+                loginTime: req.session.loginTime});  
                cb();
             }
          }

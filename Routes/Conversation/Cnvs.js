@@ -10,16 +10,14 @@ router.get('/', function(req, res) {
 
    if (owner)
       req.cnn.chkQry('select id, title, ownerId, lastMessage from ' +
-       'Conversation where ownerId = ?', [owner],
-         function(err, cnvs) {
-            if (!err)
-               res.status(200).json(cnvs);
+       'Conversation where ownerId = ?', [owner], function(err, cnvs) {
+         if (!err)
+            res.status(200).json(cnvs);
             req.cnn.release();
          });
    else 
       req.cnn.chkQry('select id, title, ownerId, lastMessage from ' +
-       'Conversation', null,
-         function(err, cnvs) {
+       'Conversation', null, function(err, cnvs) {
             if (!err)
                res.status(200).json(cnvs);  
             req.cnn.release();
@@ -58,9 +56,9 @@ router.post('/', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.check(body.title && body.title.length > 0, 
-              Tags.missingField, ['title'], cb) && 
-              vld.check(body['title'].length <= 80, Tags.badValue, ['title'], 
-              cb))
+             Tags.missingField, ['title'], cb) && 
+             vld.check(body['title'].length <= 80, Tags.badValue, ['title'], 
+             cb))
             cnn.chkQry('select * from Conversation where title = ?', 
              body.title, cb);
       },
@@ -189,15 +187,15 @@ router.post('/:cnvId/Msgs', function(req, res){
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
-             vld.check('content' in body, Tags.missingField, ['content'], cb)&&
+             vld.check('content' in body, Tags.missingField, ['content'], cb) &&
              vld.check(content.length <= 5000, Tags.badValue, ['content'], cb))
             cnn.chkQry('insert into Message set ?',
-            {cnvId: id, prsId: req.session.id,
-            whenMade: now, content: body.content}, cb);
+             {cnvId: id, prsId: req.session.id,
+             whenMade: now, content: body.content}, cb);
       },
       function(insRes, fields, cb) {
          cnn.chkQry('update Conversation set lastMessage = ? where id = ?',
-         [now, id], cb);
+          [now, id], cb);
          res.status(200).location('/Msgs/' + insRes.insertId).end();
       }],
       function(err) {   
