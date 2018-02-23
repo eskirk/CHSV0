@@ -56,9 +56,8 @@ router.post('/', function(req, res) {
    async.waterfall([
       function(cb) {
          if (vld.check(body.title && body.title.length > 0, 
-             Tags.missingField, ['title'], cb) && 
-             vld.check(body['title'].length <= 80, Tags.badValue, ['title'], 
-             cb))
+          Tags.missingField, ['title'], cb) && 
+          vld.check(body['title'].length <= 80, Tags.badValue, ['title'], cb))
             cnn.chkQry('select * from Conversation where title = ?', 
              body.title, cb);
       },
@@ -89,8 +88,8 @@ router.put('/:cnvId', function(req, res) {
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
-             vld.check(body.title.length, Tags.missingField, ['title'], cb) &&
-             vld.checkPrsOK(cnvs[0].ownerId, cb))
+          vld.check(body.title.length, Tags.missingField, ['title'], cb) &&
+          vld.checkPrsOK(cnvs[0].ownerId, cb))
             cnn.chkQry('select * from Conversation where id <> ? && title = ?',
              [cnvId, body.title], cb);
       },
@@ -187,8 +186,8 @@ router.post('/:cnvId/Msgs', function(req, res){
       },
       function(cnvs, fields, cb) {
          if (vld.check(cnvs.length, Tags.notFound, null, cb) &&
-             vld.check('content' in body, Tags.missingField, ['content'], cb) &&
-             vld.check(content.length <= 5000, Tags.badValue, ['content'], cb))
+          vld.check('content' in body, Tags.missingField, ['content'], cb) &&
+          vld.check(content.length <= 5000, Tags.badValue, ['content'], cb))
             cnn.chkQry('insert into Message set ?',
              {cnvId: id, prsId: req.session.id,
              whenMade: now, content: body.content}, cb);

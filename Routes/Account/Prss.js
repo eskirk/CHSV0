@@ -111,12 +111,11 @@ router.post('/', function (req, res) {
    async.waterfall([
       function (cb) {
          if ((vld.hasFields(body, ["email", "lastName", "password", "role"],
-             cb) || (vld.hasFields(body, ["email", "lastName", "role"], cb) &&
-             admin)) &&
-             vld.chain(body.role === 0 || admin, Tags.noPermission)
-             .chain(body.termsAccepted || admin, Tags.noTerms)
-             .chain(body.password || admin, Tags.missingField, ["password"])
-             .check(body.role >= 0, Tags.badValue, ["role"], cb)) {
+          cb) || (vld.hasFields(body, ["email", "lastName", "role"], cb) &&
+          admin)) && vld.chain(body.role === 0 || admin, Tags.noPermission)
+          .chain(body.termsAccepted || admin, Tags.noTerms)
+          .chain(body.password || admin, Tags.missingField, ["password"])
+          .check(body.role >= 0, Tags.badValue, ["role"], cb)) {
             cnn.chkQry('select * from Person where email = ?', body.email, cb);
          }
       },
@@ -154,25 +153,25 @@ router.put('/:id', function (req, res) {
             cnn.release();
          }
          else if (vld.checkPrsOK(id, cb) && Object.keys(body).length &&
-                  vld.chain(!("whenRegistered" in body), Tags.forbiddenField,
-                   ['whenRegistered'])
-                  .chain(!("termsAccepted" in body), Tags.forbiddenField,
-                   ['termsAccepted'])
-                  .chain(!("email" in body), Tags.forbiddenField, ["email"])
-                  .chain(!("password" in body) || body.password, Tags.badValue,
-                   ['password'])
-                  .chain(!("role" in body) || admin || !body.role, 
-                   Tags.badValue, ['role'])
-                  .hasExtraFields(body, Object.keys(body), cb) &&
-                  vld.check(!("password" in body) || ("oldPassword" in body) || 
-                   admin, Tags.noOldPwd, null, cb))
+          vld.chain(!("whenRegistered" in body), Tags.forbiddenField,
+          ['whenRegistered'])
+          .chain(!("termsAccepted" in body), Tags.forbiddenField,
+          ['termsAccepted'])
+          .chain(!("email" in body), Tags.forbiddenField, ["email"])
+          .chain(!("password" in body) || body.password, Tags.badValue,
+          ['password'])
+          .chain(!("role" in body) || admin || !body.role, 
+          Tags.badValue, ['role'])
+          .hasExtraFields(body, Object.keys(body), cb) &&
+          vld.check(!("password" in body) || ("oldPassword" in body) || 
+          admin, Tags.noOldPwd, null, cb))
             cnn.chkQry('select * from Person where id = ?', [id], cb);
       },
       function (prss, fields, cb) {
          if (vld.check(prss.length, Tags.notFound, null, cb) &&
-             vld.check(admin || !("password" in body) ||
-             body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null,
-             cb)) {
+          vld.check(admin || !("password" in body) ||
+          body.oldPassword === prss[0].password, Tags.oldPwdMismatch, null,
+          cb)) {
             delete body.oldPassword;
             cnn.chkQry('update Person set ? where id = ?', [body, id], cb);
          }
