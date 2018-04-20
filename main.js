@@ -10,6 +10,23 @@ var CnnPool = require('./Routes/CnnPool.js');
 var async = require('async');
 
 var app = express();
+//app.use(function(req, res, next) {console.log("Hello"); next();});
+// Static paths to be served like index.html and all client side js
+
+app.use(function(req, res, next) {
+   console.log("Handling " + req.path + '/' + req.method);
+   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+   res.header("Access-Control-Allow-Credentials", true);
+   res.header("Access-Control-Allow-Headers", ["Content-Type", "Location"]);
+   res.header("Access-Control-Expose-Headers", ["Location"]);
+   res.header("Access-Control-Allow-Methods", ["DELETE", "PUT"]);
+   next();
+});
+
+// No further processing needed for options calls.
+app.options("/*", function(req, res) {
+   res.status(200).end();
+});
 
 var port = process.argv[process.argv.indexOf('-p') + 1] || 5015;
 
